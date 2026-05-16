@@ -1,0 +1,13 @@
+Communitas is an application/program that allows the user to write a journal md file in their terminal, then sends it to their desired journal website api.
+
+The date of the file is written at the top for filtering and organization, but not actually included in the blog/journal/etc
+
+Before being sent to api/site, a filter.json file is used to filter/notify/redact/etc any chosen words written in the file
+Or could be done inside a .config file
+
+Alias: cmm (can be called anywhere, adds an alias inside .bashrc when installed/setup is ran)
+
+Usage: 
+cmm w 	; (write) 			Will write a post at the date and time the command is used. Entry is named entry-hhmm-dd-mm-yy.md (ex: entry-1230-10-24-02.md), style can be modified in .config file
+cmm p 	; (post) 			Will post the last queued written file
+cmm wp 	; (write + post)  Will write and post the newest file
