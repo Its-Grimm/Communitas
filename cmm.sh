@@ -6,7 +6,120 @@ source .env
 set +a
 
 show_help(){
-   echo "Showing help!"
+cat <<'EOF'
+cmm.sh — Journal + Mastodon CLI tool
+
+USAGE:
+  cmm.sh [OPTION] [ARG]
+
+────────────────────────────────────────
+JOURNAL COMMANDS
+────────────────────────────────────────
+
+  -w,  --write
+      Create a new journal entry (opens editor)
+
+  -p,  --post
+      Post latest journal entry to Mastodon
+
+  -wp, --write-post
+      Write entry and immediately post it
+
+────────────────────────────────────────
+VIEWING ENTRIES
+────────────────────────────────────────
+
+  -e,  --edit l|latest
+      Edit latest local journal entry in editor
+
+  -v,  --view l|latest
+      View latest journal entry in editor (vim)
+
+  -v,  --view l|latest
+      Print latest journal entry to stdout
+
+  -vp, --view-post l
+      View latest Mastodon post (formatted)
+
+  -vp, --view-post r
+      Random post (not implemented)
+
+────────────────────────────────────────
+DELETION
+────────────────────────────────────────
+
+  -d,  --delete l|latest
+      Delete latest local journal entry
+
+  -dp, --delete-post l
+      Delete latest Mastodon post AND (optionally) local copy
+
+────────────────────────────────────────
+EDITING POSTS
+────────────────────────────────────────
+
+  -ep, --edit-post l
+      Edit latest Mastodon post (opens editor, then updates remote)
+
+────────────────────────────────────────
+CONFIGURATION (~/.config or .config)
+────────────────────────────────────────
+
+  default_location=./Journal
+      Base directory for all journal files
+
+  date_style=yyyy-mm-d
+      Controls folder/file naming format:
+        d/mm/yyyy   = 3/06/2024
+        dd/mm/yyyy  = 03/06/2024
+        d/m/yyyy    = 3/6/2024
+        d/m/yy      = 3/6/24
+        yyyy-mm-d   = 2024-06-3
+
+  time_style=hh:mm
+      Time format used in filenames:
+        hh:mm-ampm  = 04:15 pm
+        h:mm-ampm   = 4:15 pm
+        h:mm-AMPM   = 4:15 PM
+        h:mm        = 16:15
+
+  platforms="Mastodon"
+      Active posting targets (future multi-platform support)
+
+  editor="vim"
+      Default editor used for writing/editing entries
+
+  effect_local_when_post=true
+      If true:
+        local journal entries are modified/deleted when using -*p commands
+      If false:
+        local and remote posts are decoupled
+
+────────────────────────────────────────
+REQUIREMENTS
+────────────────────────────────────────
+
+  - .env file must define:
+      API_KEY
+      ACCT_ID
+
+  - Mastodon instance:
+      https://mastodon.social
+
+  - External tools:
+      jq, curl, vim (or configured editor)
+
+────────────────────────────────────────
+EXAMPLES
+────────────────────────────────────────
+
+  cmm.sh -w
+  cmm.sh -wp
+  cmm.sh -vp l
+  cmm.sh -dp l
+  cmm.sh -ep l
+
+EOF
 }
 
 # Directory structure: ./Journal/Year/Month/Journal entries sorted by date then time
@@ -58,7 +171,7 @@ edit_post(){
                                                 exit 1 
                                               }
 
-   curl -X PUT "https://mastodon.social/api/v1/statuses/$ID" \
+   curl -o /dev/null -X PUT "https://mastodon.social/api/v1/statuses/$ID" \
       -H "Authorization: Bearer $API_KEY" \
       --data-urlencode "status=$USER_INPUT"
 
@@ -101,11 +214,11 @@ get_latest_post(){
 mastodon_post(){
    local POST_CONTENTS=$1
    INSTANCE="https://mastodon.social"
-   curl -sS -X POST "$INSTANCE/api/v1/statuses" \
+   curl -s -o /dev/null -X POST "$INSTANCE/api/v1/statuses" \
       -H "Authorization: Bearer $API_KEY" \
       --data-urlencode "status=$POST_CONTENTS"
 
-   echo "POSTED!!!!"
+   echo "File posted!"
 }
 
 case "$1" in 
@@ -146,7 +259,7 @@ case "$1" in
          l | latest)
             ID=$(get_latest_post | jq -r '.[0].id') || exit 1
             INSTANCE="https://mastodon.social"
-            curl -s -X DELETE "$INSTANCE/api/v1/statuses/$ID" \
+            curl -s -o /dev/null -X DELETE "$INSTANCE/api/v1/statuses/$ID" \
                -H "Authorization: Bearer $API_KEY"
 
             # Deletes local copy as well (behaviour configurable in .config file)
@@ -156,6 +269,8 @@ case "$1" in
             else 
                echo "There are no entries"
             fi 
+
+            echo "File deleted!"
          ;;
          *)
          ;; 
@@ -183,6 +298,7 @@ case "$1" in
       case "$2" in
          l | latest)
             edit_post
+            echo "File edited!"
          ;;
          *)
             # TODO: Filter garbage out (only allow format specified in config)
