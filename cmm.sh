@@ -312,29 +312,24 @@ case "$1" in
          l | latest)
             LATEST_FILE=$(get_latest)
             if [[ -n "$LATEST_FILE" ]]; then
-               vim -u ./vimrc "$LATEST_FILE"
-            else 
-               echo "There are no entries"
-            fi
-         ;;
-         *)
-            # TODO: Filter garbage out (only allow format specified in config)
-            # Then allow deletion of certain saved file
-         ;;
-      esac
-   ;;
-
-   -v | --view)
-      case "$2" in
-         l | latest)
-            LATEST_FILE=$(get_latest)
-            if [[ -n "$LATEST_FILE" ]]; then
                cat "$LATEST_FILE"
             else 
                echo "There are no entries"
             fi
          ;;
          *)
+            if [[ -n "$2" ]]; then
+               # TODO: View entry at specified date
+               echo ""
+            else 
+               echo "No filter specified, defaulting to latest"
+               LATEST_FILE=$(get_latest)
+               if [[ -n "$LATEST_FILE" ]]; then
+                  cat "$LATEST_FILE"
+               else 
+                  echo "There are no entries"
+               fi
+               fi 
 
          ;;
       esac
