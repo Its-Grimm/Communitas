@@ -23,3 +23,4 @@ cmm vr   ; (view random)   View a random post
 
 cmm * latest   ; Will affect the latest local entry
 cmm * filename ; Will affect the entry with the filename specified
+cmm * random   ; For view only, will view a random entry
