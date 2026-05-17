@@ -16,5 +16,10 @@ cmm p 	; (post) 			Will post the last queued written file
 cmm wp 	; (write + post)  Will write and post the newest file
 cmm d    ; (delete)        Will delete the local version of the entry
 cmm dp   ; (delete post)   Will delete post version of the entry
-cmm e    ; (edit)          Will edit local version of entry
+cmm e    ; (edit)          Will edit latest local version of entry
 cmm ep   ; (edit post)     Will edit post version of entry
+cmm v    ; (view)          Will view a post
+cmm vr   ; (view random)   View a random post
+
+cmm * latest   ; Will affect the latest local entry
+cmm * filename ; Will affect the entry with the filename specified
