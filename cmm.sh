@@ -54,7 +54,7 @@ post_entry(){
 
    # TODO: Allow multiple API's compatable and configurable through .config file
    # Default Mastodon for now, since that's what I use
-   mastodon_post "$POST_CONTENT" "$API_KEY"
+   mastodon_post "$POST_CONTENT"
 }
 
 get_latest(){
@@ -65,17 +65,26 @@ get_latest(){
 }
 
 get_latest_post(){
-   echo "TBI" # To Be Implemented
-   # echo "$LATEST_FILE"
+   set -e
+   set -a
+   source .env
+   set +a
+
+   INSTANCE="https://mastodon.social"
+   LATEST_POST="$(curl -s -X GET "$INSTANCE/api/v1/accounts/$ACCT_ID/statuses?limit=1" \
+                   -H "Authorization: Bearer $API_KEY")"
+
+   echo "$LATEST_POST" | jq -r '.[0].content' \
+      | sed -E " s#</p>#\n\n#g; s#<br */?>#\n#g; s#<[^>]+>##g; s/&nbsp;/ /g; s/&amp;/\&/g; s/&#39;/'/g; "
 }
 
 mastodon_post(){
    local POST_CONTENTS=$1
-   local API_KEY=$2
    INSTANCE="https://mastodon.social"
-   # curl -s -X POST "$INSTANCE/api/v1/statuses" \
+   # curl -sS -X POST "$INSTANCE/api/v1/statuses" \
    #    -H "Authorization: Bearer $API_KEY" \
-   #    -d "status=$POST_CONTENTS"
+   #    --data-urlencode "status=$POST_CONTENTS"
+
    echo "POSTED!!!!"
 }
 
@@ -97,7 +106,7 @@ case "$1" in
 
    -d | --delete)
       case "$2" in 
-         latest | l)
+         l | latest)
             LATEST_FILE=$(get_latest)
             if (( ! ${#LATEST_FILE} == 0 )); then
                rm "$LATEST_FILE"
@@ -114,7 +123,7 @@ case "$1" in
    
    -dp | --delete-post)
       case "$2" in
-         latest | l)
+         l | latest)
             LATEST_FILE=$(get_latest_post)
             if (( ! ${#LATEST_FILE} == 0 )); then
                echo ""
@@ -129,7 +138,7 @@ case "$1" in
 
    -e | --edit)
       case "$2" in
-         latest | l)
+         l | latest)
             LATEST_FILE=$(get_latest)
             if (( ! ${#LATEST_FILE} == 0 )); then
                vim -u ./vimrc "$LATEST_FILE"
@@ -146,7 +155,7 @@ case "$1" in
 
    -ep | --edit-post)
       case "$2" in
-         latest | l)
+         l | latest)
             LATEST_FILE=$(get_latest_post)
             if (( ! ${#LATEST_FILE} == 0 )); then
                vim -u ./vimrc "$LATEST_FILE"
@@ -163,7 +172,7 @@ case "$1" in
 
    -v | --view)
       case "$2" in
-         latest | l)
+         l | latest)
             LATEST_FILE=$(get_latest)
             if (( ! ${#LATEST_FILE} == 0 )); then
                cat "$LATEST_FILE"
@@ -179,13 +188,15 @@ case "$1" in
 
    -vp | --view-post)
       case "$2" in
-         latest | l)
-            LATEST_FILE=$(get_latest_post)
-            if (( ! ${#LATEST_FILE} == 0 )); then
-               echo ""
+         l | latest)
+            LATEST_POST=$(get_latest_post)
+            if (( ! ${#LATEST_POST} == 0 )); then
+               echo "$LATEST_POST"
             else 
                echo "There are no entries"
             fi
+         ;;
+         r | random)
          ;;
          *)
 
