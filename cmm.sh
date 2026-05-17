@@ -44,6 +44,35 @@ write_entry(){
    save_file "$USER_INPUT"
 }
 
+edit_post(){
+   local tmpfile
+   tmpfile="$(mktemp)"
+   LATEST_POST=$(./cmm.sh -vp l)
+   printf '%s' "$LATEST_POST" > "$tmpfile"
+   
+   vim -u ./vimrc "$tmpfile"
+   USER_INPUT="$(cat "$tmpfile")"
+
+   ID=$(get_latest_post | jq -r '.[0].id') || { 
+                                                echo "ID could not be extracted" 
+                                                exit 1 
+                                              }
+
+   curl -X PUT "https://mastodon.social/api/v1/statuses/$ID" \
+      -H "Authorization: Bearer $API_KEY" \
+      --data-urlencode "status=$USER_INPUT"
+
+   # Also edits local file, behaviour configurable in .config
+   LATEST_FILE=$(get_latest)
+   if [[ -n "$LATEST_FILE" ]]; then
+      printf '%s' "$USER_INPUT" > "$LATEST_FILE"
+   else 
+      echo "There are no entries"
+   fi
+
+   rm -f "$tmpfile"
+}
+
 post_entry(){
    # TODO: Image upload feature
    # Maybe handled by sending images to an image storage site, then linking the image into the entry/post
@@ -52,11 +81,6 @@ post_entry(){
       POST_CONTENT="$1"
    fi
 
-   # set -e
-   # set -a
-   # source .env
-   # set +a
-
    # TODO: Allow multiple API's compatable and configurable through .config file
    # Default Mastodon for now, since that's what I use
    mastodon_post "$POST_CONTENT"
@@ -64,18 +88,13 @@ post_entry(){
 
 get_latest(){
    LATEST_FILE="$(find ./Journal -type f -name "*.md" | sort | tail -n 1)"
-   # echo "$LATEST_FILE"
-   # echo "$(cat $LATEST_FILE)"
    echo "$LATEST_FILE"
 }
 
 get_latest_post(){
-
-
    INSTANCE="https://mastodon.social"
    LATEST_POST="$(curl -s -X GET "$INSTANCE/api/v1/accounts/$ACCT_ID/statuses?limit=1" \
                    -H "Authorization: Bearer $API_KEY")"
-
    echo "$LATEST_POST"
 }
 
@@ -163,12 +182,7 @@ case "$1" in
    -ep | --edit-post)
       case "$2" in
          l | latest)
-            LATEST_FILE=$(get_latest_post)
-            if [[ -n "$LATEST_FILE" ]]; then
-               vim -u ./vimrc "$LATEST_FILE"
-            else 
-               echo "There are no entries"
-            fi
+            edit_post
          ;;
          *)
             # TODO: Filter garbage out (only allow format specified in config)
