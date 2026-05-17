@@ -9,7 +9,7 @@ save_file(){
    YEAR="$(date '+%Y')"
    MONTH="$(date '+%B')"
    DATE="$(date '+%F')"
-   TIME="$(date '+%R')"
+   TIME="$(date '+%R' | sed -r 's/://g')" 
 
    DIR="./Journal/$YEAR/$MONTH"
    mkdir -p "$DIR"
@@ -20,8 +20,8 @@ save_file(){
 
 write_entry(){
    local tmpfile
-   local vimrc
    tmpfile="$(mktemp)"
+
    vim -u ./vimrc "$tmpfile"
    USER_INPUT="$(cat "$tmpfile")"
 
@@ -34,30 +34,27 @@ write_entry(){
       echo "File discarded"
       exit 1
    fi
-   # echo "File contents:"
-   # echo "$(cat "$tmpfile")"
 
    rm -f "$tmpfile"
-
    save_file "$USER_INPUT"
 }
 
 post_entry(){
    # TODO: Image upload feature
    # Maybe handled by sending images to an image storage site, then linking the image into the entry/post
+   local POST_CONTENT
+   if [[ -n "$1" ]]; then
+      POST_CONTENT="$1"
+   fi
+
    set -e
    set -a
    source .env
    set +a
 
    # TODO: Allow multiple API's compatable and configurable through .config file
-   # Default Mastodon for now
-   # curl -s -X POST "$INSTANCE/api/v1/statuses" \
-   #    -H "Authorization: Bearer $API_KEY" \
-   #    -d "status=$USER_INPUT"
-
-   # echo "Posted entry:"
-   # echo "$USER_INPUT"
+   # Default Mastodon for now, since that's what I use
+   mastodon_post "$POST_CONTENT" "$API_KEY"
 }
 
 get_latest(){
@@ -67,25 +64,46 @@ get_latest(){
    echo "$LATEST_FILE"
 }
 
+get_latest_post(){
+   echo "TBI" # To Be Implemented
+   # echo "$LATEST_FILE"
+}
+
+mastodon_post(){
+   local POST_CONTENTS=$1
+   local API_KEY=$2
+   INSTANCE="https://mastodon.social"
+   # curl -s -X POST "$INSTANCE/api/v1/statuses" \
+   #    -H "Authorization: Bearer $API_KEY" \
+   #    -d "status=$POST_CONTENTS"
+   echo "POSTED!!!!"
+}
+
 case "$1" in 
    -w | --write)
       write_entry
    ;;
 
    -p | --post)
-      post_entry
+      LATEST_FILE=$(get_latest)
+      post_entry "$(cat "$LATEST_FILE")"
    ;;
 
    -wp | --write-post)
       write_entry
-      post_entry
+      LATEST_FILE=$(get_latest)
+      post_entry "$(cat "$LATEST_FILE")"
    ;;
 
    -d | --delete)
       case "$2" in 
          latest | l)
             LATEST_FILE=$(get_latest)
-            rm "$LATEST_FILE"
+            if (( ! ${#LATEST_FILE} == 0 )); then
+               rm "$LATEST_FILE"
+            else 
+               echo "There are no entries"
+            fi 
          ;;
          *)
             # TODO: Filter garbage out (only allow format specified in config)
@@ -97,6 +115,12 @@ case "$1" in
    -dp | --delete-post)
       case "$2" in
          latest | l)
+            LATEST_FILE=$(get_latest_post)
+            if (( ! ${#LATEST_FILE} == 0 )); then
+               echo ""
+            else 
+               echo "There are no entries"
+            fi
          ;;
          *)
          ;; 
@@ -107,7 +131,28 @@ case "$1" in
       case "$2" in
          latest | l)
             LATEST_FILE=$(get_latest)
-            vim -u ./vimrc "$LATEST_FILE"
+            if (( ! ${#LATEST_FILE} == 0 )); then
+               vim -u ./vimrc "$LATEST_FILE"
+            else 
+               echo "There are no entries"
+            fi
+         ;;
+         *)
+            # TODO: Filter garbage out (only allow format specified in config)
+            # Then allow deletion of certain saved file
+         ;;
+      esac
+   ;;
+
+   -ep | --edit-post)
+      case "$2" in
+         latest | l)
+            LATEST_FILE=$(get_latest_post)
+            if (( ! ${#LATEST_FILE} == 0 )); then
+               vim -u ./vimrc "$LATEST_FILE"
+            else 
+               echo "There are no entries"
+            fi
          ;;
          *)
             # TODO: Filter garbage out (only allow format specified in config)
@@ -120,7 +165,11 @@ case "$1" in
       case "$2" in
          latest | l)
             LATEST_FILE=$(get_latest)
-            cat "$LATEST_FILE"
+            if (( ! ${#LATEST_FILE} == 0 )); then
+               cat "$LATEST_FILE"
+            else 
+               echo "There are no entries"
+            fi
          ;;
          *)
 
@@ -131,7 +180,12 @@ case "$1" in
    -vp | --view-post)
       case "$2" in
          latest | l)
-            LATEST_FILE=$(get_latest)
+            LATEST_FILE=$(get_latest_post)
+            if (( ! ${#LATEST_FILE} == 0 )); then
+               echo ""
+            else 
+               echo "There are no entries"
+            fi
          ;;
          *)
 
