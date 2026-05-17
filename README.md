@@ -92,7 +92,7 @@ chmod +x cmm.sh
 
 ## Configuration
 
-Communitas is configured via a ```.env``` file and optional local config settings.
+Communitas is configured via a `.env` file and optional local config settings.
 
 --- 
 
