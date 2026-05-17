@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://github.com/Its-Grimm/Communitas"><img src="./Communitas.png" alt="Communitas" width="200"></a>
+  <a href="https://github.com/Its-Grimm/Communitas"><img src="./icons/Communitas.png" alt="Communitas" width="200"></a>
   <br>
   Communitas
   <br>
