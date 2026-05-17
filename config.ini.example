@@ -1,0 +1,32 @@
+# default_location=~ ; will be set to home directory
+default_location="./Journal",
+
+# d/mm/yyyy   = 3/06/2024
+# dd/mm/yyyy  = 03/06/2024
+# d/m/yyyy    = 3/6/2024
+# d/m/yy      = 4/6/24
+# yyyy-mm-d   = 2024-06-3
+date_style=yyyy-mm-d,
+
+# hh:mm-ampm  = 04:15 pm
+# h:mm-ampm   = 4:15 pm
+# h:mm-AMPM   = 4:15 PM
+# h=h:mm       = 16:15
+time_style=hh:mm,
+
+# platforms="plat1", "plat2", "plat*"
+# platforms="Mastodon", "Twitter", "Pixelfed"
+platforms=Mastodon,
+
+# editor="vim"
+# editor="nano"
+# editor="neovim"|"nvim"
+editor=vim,
+
+# true  = local copies of posts are changed/removed when -*p is called
+# false = local entries and posted entries are completely decoupled
+effect_local_on_post=true,
+
+# true  = will run post contents through filter.txt and redact any filtered words
+# false = will not use filter.txt (WARNING: anything you write will be posted if using -p | -wp)
+using_filter=true
