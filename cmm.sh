@@ -1,5 +1,10 @@
 #!/bin/bash
 
+set -e
+set -a
+source .env
+set +a
+
 show_help(){
    echo "Showing help!"
 }
@@ -47,10 +52,10 @@ post_entry(){
       POST_CONTENT="$1"
    fi
 
-   set -e
-   set -a
-   source .env
-   set +a
+   # set -e
+   # set -a
+   # source .env
+   # set +a
 
    # TODO: Allow multiple API's compatable and configurable through .config file
    # Default Mastodon for now, since that's what I use
@@ -65,25 +70,21 @@ get_latest(){
 }
 
 get_latest_post(){
-   set -e
-   set -a
-   source .env
-   set +a
+
 
    INSTANCE="https://mastodon.social"
    LATEST_POST="$(curl -s -X GET "$INSTANCE/api/v1/accounts/$ACCT_ID/statuses?limit=1" \
                    -H "Authorization: Bearer $API_KEY")"
 
-   echo "$LATEST_POST" | jq -r '.[0].content' \
-      | sed -E " s#</p>#\n\n#g; s#<br */?>#\n#g; s#<[^>]+>##g; s/&nbsp;/ /g; s/&amp;/\&/g; s/&#39;/'/g; "
+   echo "$LATEST_POST"
 }
 
 mastodon_post(){
    local POST_CONTENTS=$1
    INSTANCE="https://mastodon.social"
-   # curl -sS -X POST "$INSTANCE/api/v1/statuses" \
-   #    -H "Authorization: Bearer $API_KEY" \
-   #    --data-urlencode "status=$POST_CONTENTS"
+   curl -sS -X POST "$INSTANCE/api/v1/statuses" \
+      -H "Authorization: Bearer $API_KEY" \
+      --data-urlencode "status=$POST_CONTENTS"
 
    echo "POSTED!!!!"
 }
@@ -108,8 +109,8 @@ case "$1" in
       case "$2" in 
          l | latest)
             LATEST_FILE=$(get_latest)
-            if (( ! ${#LATEST_FILE} == 0 )); then
-               rm "$LATEST_FILE"
+            if [[ -n "$LATEST_FILE" ]]; then
+               rm -- "$LATEST_FILE"
             else 
                echo "There are no entries"
             fi 
@@ -124,12 +125,18 @@ case "$1" in
    -dp | --delete-post)
       case "$2" in
          l | latest)
-            LATEST_FILE=$(get_latest_post)
-            if (( ! ${#LATEST_FILE} == 0 )); then
-               echo ""
+            ID=$(get_latest_post | jq -r '.[0].id') || exit 1
+            INSTANCE="https://mastodon.social"
+            curl -s -X DELETE "$INSTANCE/api/v1/statuses/$ID" \
+               -H "Authorization: Bearer $API_KEY"
+
+            # Deletes local copy as well (behaviour configurable in .config file)
+            LATEST_FILE=$(get_latest)
+            if [[ -n "$LATEST_FILE" ]]; then
+               rm -- "$LATEST_FILE"
             else 
                echo "There are no entries"
-            fi
+            fi 
          ;;
          *)
          ;; 
@@ -140,7 +147,7 @@ case "$1" in
       case "$2" in
          l | latest)
             LATEST_FILE=$(get_latest)
-            if (( ! ${#LATEST_FILE} == 0 )); then
+            if [[ -n "$LATEST_FILE" ]]; then
                vim -u ./vimrc "$LATEST_FILE"
             else 
                echo "There are no entries"
@@ -157,7 +164,7 @@ case "$1" in
       case "$2" in
          l | latest)
             LATEST_FILE=$(get_latest_post)
-            if (( ! ${#LATEST_FILE} == 0 )); then
+            if [[ -n "$LATEST_FILE" ]]; then
                vim -u ./vimrc "$LATEST_FILE"
             else 
                echo "There are no entries"
@@ -174,7 +181,24 @@ case "$1" in
       case "$2" in
          l | latest)
             LATEST_FILE=$(get_latest)
-            if (( ! ${#LATEST_FILE} == 0 )); then
+            if [[ -n "$LATEST_FILE" ]]; then
+               vim -u ./vimrc "$LATEST_FILE"
+            else 
+               echo "There are no entries"
+            fi
+         ;;
+         *)
+            # TODO: Filter garbage out (only allow format specified in config)
+            # Then allow deletion of certain saved file
+         ;;
+      esac
+   ;;
+
+   -v | --view)
+      case "$2" in
+         l | latest)
+            LATEST_FILE=$(get_latest)
+            if [[ -n "$LATEST_FILE" ]]; then
                cat "$LATEST_FILE"
             else 
                echo "There are no entries"
@@ -189,14 +213,17 @@ case "$1" in
    -vp | --view-post)
       case "$2" in
          l | latest)
-            LATEST_POST=$(get_latest_post)
-            if (( ! ${#LATEST_POST} == 0 )); then
-               echo "$LATEST_POST"
-            else 
-               echo "There are no entries"
-            fi
+            LATEST_POST=$(get_latest_post \
+               | jq -r '.[0].content' \
+               | sed -E " s#</p>#\n\n#g; s#<br */?>#\n#g; s#<[^>]+>##g; s/&nbsp;/ /g; s/&amp;/\&/g; s/&#39;/'/g; ") \
+               || { 
+                     echo "There are no entries" 
+                     exit 1 
+                  }
+            echo "$LATEST_POST"
          ;;
          r | random)
+            RANDOM_POST=$(get_random_post)
          ;;
          *)
 
