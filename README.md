@@ -14,6 +14,7 @@
   <a href="#download">Download</a> •
   <a href="#configuration">Configuration</a> •
   <a href="#credits">Credits</a> •
+  <a href="#future">Future</a> •
   <a href="#license">License</a>
 </p>
 
@@ -144,7 +145,7 @@ Communitas is built using standard Unix tools and the Mastodon API.
 
 ---
 
-## Related
+## Future
 
 Extend this tool with support for other platforms (Twitter/X, Pixelfed, etc.)
 Future idea: encryption for private journal entries
